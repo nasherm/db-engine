@@ -1,6 +1,6 @@
 #include <iostream>
-
+#include "Repl.h"
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Repl::start();
     return 0;
 }

@@ -3,4 +3,4 @@ project(db_engine)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(db_engine main.cpp)
+add_executable(db_engine main.cpp Repl.cpp Repl.h)
