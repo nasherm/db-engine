@@ -5,14 +5,13 @@
 #include "Repl.h"
 #include <iostream>
 #include <vector>
-
-void tokenize(std::string in, const std::string& delim, std::vector<std::string> &tokens) {
-    size_t pos = 0;
-    std::string token;
-    while ((pos = in.find(delim)) != std::string::npos) {
-        token = in.substr(0, pos);
-        tokens.push_back(token);
-        in.erase(0, pos + delim.length());
+#include <cassert>
+#include <sstream>
+void tokenize(std::string in, const char delim, std::vector<std::string> &tokens) {
+    std::istringstream iss(in);
+    std::string str;
+    while (getline(iss, str, delim)){
+        tokens.push_back(str);
     }
 }
 
@@ -28,28 +27,42 @@ Command stringToCommand(const std::string& comm){
 void Repl::readLine(Statement& statement) {
     std::string in;
     std::getline(std::cin, in);
-    tokenize(in, " ", statement.tokens);
+    tokenize(in, ' ', statement.tokens);
     statement.command = stringToCommand(statement.tokens[0]);
 }
 
 void Repl::start() {
-    Statement stmt;
-    std::string in;
+    table = new Table;
     while(true) {
-        std::cout << "+> ";
+        Statement stmt;
+        std::cout << "+>";
         readLine(stmt);
         if (stmt.command == Command::Quit) {
             std::cout << "Goodbye\n";
             break;
         }
-        else if (stmt.command == Command::Failed)
+        else if (stmt.command == Command::Failed) {
             std::cout << "Couldn't read command\n";
+        }
         else {
-            executeStatement(stmt);
+            try{
+                executeStatement(stmt);
+            } catch(std::exception& e) {
+                std::cout << "Failed to execute command: " << e.what() << std::endl;
+            }
         }
     }
+    delete table;
 }
 
 void Repl::executeStatement(const Statement &stmt) {
-    return;
+    if (stmt.command == Command::Insert) {
+        assert(stmt.tokens.size() == 4);
+        assert(table->spaceAvail());
+        table->insert(stmt.tokens);
+    }
+    else if (stmt.command == Command::Select) {
+        assert(stmt.tokens.size() == 1);
+        table->select();
+    }
 }

@@ -7,7 +7,7 @@
 
 #include <string>
 #include <vector>
-
+#include "Table.h"
 enum Command {Insert, Select, Tables, Delete, Quit, Failed};
 
 typedef struct {
@@ -16,9 +16,9 @@ typedef struct {
 } Statement;
 
 class Repl {
+    Table *table;
 public:
     Repl() = default;
-
     static void readLine(Statement&);
     void start();
     void executeStatement(const Statement& stmt);
