@@ -8,7 +8,6 @@
 
 uint8_t* Table::rowSlot(const uint32_t& rowNum) {
     uint32_t pageNum = rowNum / ROWS_PER_PAGE;
-    assert(pageNum < MAX_PAGES);
     if (pages[pageNum] == nullptr){
         pages[pageNum] = new uint8_t[PAGE_SIZE];
     }
@@ -31,6 +30,7 @@ void Table::insert(const std::vector<std::string> &args) {
     std::memcpy(slot, row, sizeof(Row));
     rowCount ++;
 }
+
 void printRow(const Row* row) {
     printf("(%d, %s, %s)\n", row->id, row->username, row->email);
 }

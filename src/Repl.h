@@ -19,7 +19,7 @@ class Repl {
     Table *table;
 public:
     Repl() = default;
-    static void readLine(Statement&);
+    static void stmtFromString(std::string& in, Statement&);
     void start();
     void executeStatement(const Statement& stmt);
 };

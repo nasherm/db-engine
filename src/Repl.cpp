@@ -5,7 +5,6 @@
 #include "Repl.h"
 #include <iostream>
 #include <vector>
-#include <cassert>
 #include <sstream>
 
 void tokenize(std::string in, const char delim, std::vector<std::string> &tokens) {
@@ -25,19 +24,19 @@ Command stringToCommand(const std::string& comm){
     return Command::Failed;
 }
 
-void Repl::readLine(Statement& statement) {
-    std::string in;
-    std::getline(std::cin, in);
+void Repl::stmtFromString(std::string& in, Statement& statement) {
     tokenize(in, ' ', statement.tokens);
     statement.command = stringToCommand(statement.tokens[0]);
 }
 
 void Repl::start() {
     table = new Table;
+    std::string in;
     while(true) {
         Statement stmt;
         std::cout << "+>";
-        readLine(stmt);
+        std::getline(std::cin, in);
+        stmtFromString(in,stmt);
         if (stmt.command == Command::Quit) {
             std::cout << "Goodbye\n";
             break;
@@ -49,7 +48,10 @@ void Repl::start() {
             try{
                 executeStatement(stmt);
             } catch(std::exception& e) {
-                std::cout << "Failed to execute command: " << e.what() << std::endl;
+                std::cout
+                << "Failed to execute command: "
+                << e.what()
+                << std::endl;
             }
         }
     }
@@ -58,12 +60,19 @@ void Repl::start() {
 
 void Repl::executeStatement(const Statement &stmt) {
     if (stmt.command == Command::Insert) {
-        assert(stmt.tokens.size() == 4);
-        assert(table->spaceAvail());
+        if (stmt.tokens.size() != 4){
+            throw std::runtime_error("Incorrect number of args for insert");
+        }
+        if (!table->spaceAvail()){
+            throw std::runtime_error("No space in table for insert");
+        }
         table->insert(stmt.tokens);
     }
     else if (stmt.command == Command::Select) {
-        assert(stmt.tokens.size() == 1);
+        if (stmt.tokens.size() != 1){
+            throw std::runtime_error("Incorrect number of args for select");
+        }
         table->select();
     }
+
 }

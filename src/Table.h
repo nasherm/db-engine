@@ -32,10 +32,24 @@ private:
     uint32_t rowCount;
 public:
     Table() = default;
-    [[nodiscard]] bool spaceAvail() const { return (rowCount + 1 < MAX_PAGES); }
+    ~Table() {
+        for(auto page : pages) {
+            delete page;
+        }
+    }
+
+    [[nodiscard]] bool spaceAvail() const { return (rowCount + 1 < TABLE_MAX_ROWS); }
     uint8_t *rowSlot(const uint32_t& rowNum);
     void insert(const std::vector<std::string>& args);
     void select();
+    static bool compareStringToChar(const char *c, const std::string& s){
+        for (auto i = 0; i < s.length(); i++){
+            if (c[i] == '\0' || c[i] != s[i])
+                return false;
+        }
+
+        return true;
+    }
 };
 
 
