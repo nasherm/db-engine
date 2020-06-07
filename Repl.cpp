@@ -7,6 +7,7 @@
 #include <vector>
 #include <cassert>
 #include <sstream>
+
 void tokenize(std::string in, const char delim, std::vector<std::string> &tokens) {
     std::istringstream iss(in);
     std::string str;

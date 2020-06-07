@@ -9,12 +9,11 @@
 uint8_t* Table::rowSlot(const uint32_t& rowNum) {
     uint32_t pageNum = rowNum / ROWS_PER_PAGE;
     assert(pageNum < MAX_PAGES);
-    auto pointerToPage = pages[pageNum];
-    if (pointerToPage == nullptr){
-        pointerToPage = new uint8_t[PAGE_SIZE];
+    if (pages[pageNum] == nullptr){
+        pages[pageNum] = new uint8_t[PAGE_SIZE];
     }
     auto rowOffset = (rowNum % ROWS_PER_PAGE) * sizeof(Row);
-    return pointerToPage + rowOffset;
+    return pages[pageNum] + rowOffset;
 }
 
 void copyString(char* dest, const std::string& src){
@@ -22,6 +21,7 @@ void copyString(char* dest, const std::string& src){
         dest[i] = src[i];
     }
 }
+
 void Table::insert(const std::vector<std::string> &args) {
     Row *row = new Row;
     auto slot = rowSlot(rowCount);

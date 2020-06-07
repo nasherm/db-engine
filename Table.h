@@ -20,6 +20,7 @@ typedef struct {
     char username[USER_LEN];
     char email[EMAIL_LEN];
 }Row;
+
 // Data will be stored in pages
 class Table {
 private:
@@ -31,7 +32,7 @@ private:
     uint32_t rowCount;
 public:
     Table() = default;
-    bool spaceAvail() { return (rowCount + 1 < MAX_PAGES); }
+    [[nodiscard]] bool spaceAvail() const { return (rowCount + 1 < MAX_PAGES); }
     uint8_t *rowSlot(const uint32_t& rowNum);
     void insert(const std::vector<std::string>& args);
     void select();
