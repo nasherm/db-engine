@@ -34,7 +34,7 @@ public:
     Table() = default;
     ~Table() {
         for(auto page : pages) {
-            delete page;
+            delete [] page;
         }
     }
 
