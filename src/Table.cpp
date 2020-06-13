@@ -5,14 +5,50 @@
 #include "Table.h"
 #include <cassert>
 #include <cstring>
+#include <fcntl.h>
+#include <stdexcept>
+#include <zconf.h>
+#include <iostream>
+
+void Pager::pagerOpen(const std::string& fileName) {
+    int fd = open(fileName.c_str(), O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+    if (fd == -1) {
+        printf("Unable to print file: %s\n", fileName.c_str());
+        throw std::runtime_error("file failure");
+    }
+    fileDescriptor = fd;
+    fileLength = lseek(fd, 0, SEEK_END);
+}
+
+uint8_t* Pager::getPage(const uint32_t pageNum) {
+    if (pageNum > MAX_PAGES) {
+        throw std::runtime_error("Tried to get page out of bounds");
+    }
+
+    if (pages[pageNum] == nullptr){
+        // Cache miss
+        pages[pageNum] = new uint8_t[PAGE_SIZE];
+        auto numPages = fileLength / PAGE_SIZE;
+
+        // In the case where we can save a partial page
+        if (fileLength % PAGE_SIZE) numPages ++;
+
+        if (pageNum <= numPages) {
+            lseek(fileDescriptor, pageNum * PAGE_SIZE, SEEK_SET);
+            auto bytesReadFromFile = read(fileDescriptor, pages[pageNum], PAGE_SIZE);
+            if (bytesReadFromFile == -1) {
+                throw std::runtime_error("Couldn't read page from file");
+            }
+        }
+
+    }
+    return pages[pageNum];
+}
 
 uint8_t* Table::rowSlot(const uint32_t& rowNum) {
     uint32_t pageNum = rowNum / ROWS_PER_PAGE;
-    if (pages[pageNum] == nullptr){
-        pages[pageNum] = new uint8_t[PAGE_SIZE];
-    }
     auto rowOffset = (rowNum % ROWS_PER_PAGE) * sizeof(Row);
-    return pages[pageNum] + rowOffset;
+    return pager->getPage(pageNum) + rowOffset;
 }
 
 void copyString(char* dest, const std::string& src){
@@ -22,13 +58,19 @@ void copyString(char* dest, const std::string& src){
 }
 
 void Table::insert(const std::vector<std::string> &args) {
-    Row *row = new Row;
-    auto slot = rowSlot(rowCount);
-    row->id = std::stoi(args[1]);
-    copyString(row->username, args[2]);
-    copyString(row->email, args[3]);
-    std::memcpy(slot, row, sizeof(Row));
-    rowCount ++;
+    try {
+        Row *row = new Row;
+        auto slot = rowSlot(rowCount);
+        row->id = std::stoi(args[1]);
+        copyString(row->username, args[2]);
+        copyString(row->email, args[3]);
+        std::memcpy(slot, row, sizeof(Row));
+        rowCount++;
+    } catch (std::exception& e) {
+        std::cout << "Failed to insert to table exception: "
+        << e.what()
+        << std::endl;
+    }
 }
 
 void printRow(const Row* row) {

@@ -21,21 +21,39 @@ typedef struct {
     char email[EMAIL_LEN];
 }Row;
 
+static const uint32_t PAGE_SIZE = 4096;
+static const uint32_t MAX_PAGES = 100;
+
+class Pager{
+private:
+    int fileDescriptor;
+    uint32_t fileLength;
+    std::array<uint8_t*, MAX_PAGES> pages;
+
+public:
+    Pager() = default;
+    ~Pager() {
+        for (auto page: pages){
+            delete page;
+        }
+    }
+    void pagerOpen(const std::string& fileName);
+    uint8_t* getPage(const uint32_t pageNum);
+};
+
 // Data will be stored in pages
 class Table {
 private:
-    static const uint32_t PAGE_SIZE = 4096;
-    static const uint32_t MAX_PAGES = 100;
     static const uint32_t ROWS_PER_PAGE = PAGE_SIZE / sizeof(Row);
     static const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * MAX_PAGES;
-    std::array<uint8_t*, MAX_PAGES> pages;
-    uint32_t rowCount;
+    Pager* pager;
+    uint32_t rowCount = 0;
 public:
-    Table() = default;
+    Table() {
+        pager = new Pager;
+    }
     ~Table() {
-        for(auto page : pages) {
-            delete page;
-        }
+        delete pager;
     }
 
     [[nodiscard]] bool spaceAvail() const { return (rowCount + 1 < TABLE_MAX_ROWS); }
