@@ -34,7 +34,7 @@ public:
     Pager() = default;
     ~Pager() {
         for (auto page: pages){
-            delete page;
+            delete [] page;
         }
     }
     void pagerOpen(const std::string& fileName);
