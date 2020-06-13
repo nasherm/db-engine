@@ -20,12 +20,14 @@ void test_insert() {
         table->insert(stmt.tokens);
     }
     Row* r = new Row;
-    std::memcpy(r, table->rowSlot(0), sizeof(Row));
+    auto cursor = new Cursor(table, true);
+    std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 1);
     assert((Table::compareStringToChar(r->username, "test")));
     assert((Table::compareStringToChar(r->email, "test@email.com")));
 
-    std::memcpy(r, table->rowSlot(1), sizeof(Row));
+    cursor->advance();
+    std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 2);
     assert(Table::compareStringToChar(r->username, "test2"));
     assert(Table::compareStringToChar(r->email, "test2@email.com"));
@@ -38,7 +40,7 @@ void test_persistence(){
     // Clear contents
     std::ofstream f("./test_db", std::ofstream::trunc);
     f.close();
-    auto *table = new Table("test_db");
+    auto table = new Table("test_db");
     std::vector<std::string> instructions;
     instructions.emplace_back("insert 1 test test@email.com");
     instructions.emplace_back("insert 2 test2 test2@email.com");
@@ -51,19 +53,21 @@ void test_persistence(){
     delete table;
     auto table2 = new Table("test_db");
 
-    Row* r = new Row;
-    std::memcpy(r, table2->rowSlot(0), sizeof(Row));
+    auto* r = new Row;
+    auto cursor = new Cursor(table2, true);
+    std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 1);
     assert((Table::compareStringToChar(r->username, "test")));
     assert((Table::compareStringToChar(r->email, "test@email.com")));
-
-    std::memcpy(r, table2->rowSlot(1), sizeof(Row));
+    cursor->advance();
+    std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 2);
     assert(Table::compareStringToChar(r->username, "test2"));
     assert(Table::compareStringToChar(r->email, "test2@email.com"));
 
     delete r;
     delete table2;
+    delete cursor;
 }
 
 int main() {

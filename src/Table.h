@@ -23,6 +23,8 @@ typedef struct {
 
 static const uint32_t PAGE_SIZE = 4096;
 static const uint32_t MAX_PAGES = 100;
+static const uint32_t ROWS_PER_PAGE = PAGE_SIZE / sizeof(Row);
+static const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * MAX_PAGES;
 
 class Pager{
 public:
@@ -44,8 +46,6 @@ public:
 // Data will be stored in pages
 class Table {
 private:
-    static const uint32_t ROWS_PER_PAGE = PAGE_SIZE / sizeof(Row);
-    static const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * MAX_PAGES;
     Pager* pager;
     uint32_t rowCount = 0;
 public:
@@ -63,7 +63,6 @@ public:
     }
 
     [[nodiscard]] bool spaceAvail() const { return (rowCount + 1 < TABLE_MAX_ROWS); }
-    uint8_t *rowSlot(const uint32_t& rowNum);
     void insert(const std::vector<std::string>& args);
     void select();
     static bool compareStringToChar(const char *c, const std::string& s){
@@ -75,7 +74,27 @@ public:
         return true;
     }
     void tableClose();
+    uint32_t getRowCount() {return rowCount;}
+    uint8_t* getPage(const uint32_t pageNum) {return pager->getPage(pageNum);}
 };
 
-
+class Cursor {
+private:
+    Table *table;
+    uint32_t rowNumber;
+    bool endOfTable;
+public:
+    Cursor(Table *table, bool start): table(table) {
+        if (start){
+            rowNumber = 0;
+            endOfTable = (table->getRowCount() == 0);
+        } else {
+            rowNumber = table->getRowCount();
+            endOfTable = true;
+        }
+    }
+    uint8_t* value();
+    void advance();
+    [[nodiscard]] bool atEndOfTable() const{return endOfTable;}
+};
 #endif //DB_ENGINE_TABLE_H

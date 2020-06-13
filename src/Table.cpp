@@ -61,20 +61,6 @@ void Pager::flushPage(const uint32_t pageIndex, const uint32_t bytes) {
     }
 }
 
-uint8_t* Table::rowSlot(const uint32_t& rowNum) {
-    uint32_t pageNum = rowNum / ROWS_PER_PAGE;
-    auto rowOffset = (rowNum % ROWS_PER_PAGE) * sizeof(Row);
-    try {
-        auto pagePointer = pager->getPage(pageNum);
-        return pagePointer + rowOffset;
-    } catch (std::exception& e) {
-        std::cout << "failed to get page, exception thrown:"
-        << e.what()
-        << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
 void copyString(char* dest, const std::string& src){
     for (size_t i = 0; i < src.length(); i++){
         dest[i] = src[i];
@@ -82,13 +68,15 @@ void copyString(char* dest, const std::string& src){
 }
 
 void Table::insert(const std::vector<std::string> &args) {
-    Row *row = new Row;
-    auto slot = rowSlot(rowCount);
+    auto row = new Row;
+    auto cursor = new Cursor(this, false);
     row->id = std::stoi(args[1]);
     copyString(row->username, args[2]);
     copyString(row->email, args[3]);
-    std::memcpy(slot, row, sizeof(Row));
+    std::memcpy(cursor->value(), row, sizeof(Row));
     rowCount++;
+    delete cursor;
+    delete row;
 }
 
 void printRow(const Row* row) {
@@ -97,11 +85,15 @@ void printRow(const Row* row) {
 
 void Table::select(){
     auto row = new Row;
-    for (auto i = 0; i < rowCount; i++) {
-        auto slot = rowSlot(i);
+    auto cursor = new Cursor(this, true);
+    while (!(cursor->atEndOfTable())) {
+        auto slot = cursor->value();
         std::memcpy(row, slot, sizeof(Row));
         printRow(row);
+        cursor->advance();
     }
+    delete row;
+    delete cursor;
 }
 
 void Table::tableClose() {
@@ -124,4 +116,23 @@ void Table::tableClose() {
     if (close(pager->fileDescriptor) == -1) {
         throw std::runtime_error ("Failed to close db\n");
     }
+}
+
+uint8_t* Cursor::value() {
+    uint32_t pageNum = rowNumber / ROWS_PER_PAGE;
+    auto rowOffset = (rowNumber % ROWS_PER_PAGE) * sizeof(Row);
+    try {
+        auto pagePointer = table->getPage(pageNum);
+        return pagePointer + rowOffset;
+    } catch (std::exception& e) {
+        std::cout << "failed to get page, exception thrown:"
+                  << e.what()
+                  << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+void Cursor::advance() {
+    rowNumber ++;
+    if (rowNumber >= table->getRowCount()) endOfTable=true;
 }
