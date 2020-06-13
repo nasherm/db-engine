@@ -16,9 +16,13 @@ typedef struct {
 } Statement;
 
 class Repl {
+    std::string fileName = "db_out";
     Table *table;
 public:
     Repl() = default;
+    explicit Repl(char* fileName) {
+        this->fileName = fileName;
+    }
     static void stmtFromString(std::string& in, Statement&);
     void start();
     void executeStatement(const Statement& stmt);

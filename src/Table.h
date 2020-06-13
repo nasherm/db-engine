@@ -25,11 +25,6 @@ static const uint32_t PAGE_SIZE = 4096;
 static const uint32_t MAX_PAGES = 100;
 
 class Pager{
-private:
-    int fileDescriptor;
-    uint32_t fileLength;
-    std::array<uint8_t*, MAX_PAGES> pages;
-
 public:
     Pager() = default;
     ~Pager() {
@@ -38,7 +33,12 @@ public:
         }
     }
     void pagerOpen(const std::string& fileName);
-    uint8_t* getPage(const uint32_t pageNum);
+    uint8_t* getPage(uint32_t pageNum);
+    void flushPage(uint32_t pageIndex, uint32_t bytes);
+
+    int fileDescriptor;
+    uint32_t fileLength;
+    std::array<uint8_t*, MAX_PAGES> pages;
 };
 
 // Data will be stored in pages
@@ -51,6 +51,12 @@ private:
 public:
     Table() {
         pager = new Pager;
+        pager->pagerOpen("db_out");
+    }
+    explicit Table(const std::string& fileName) {
+        pager = new Pager;
+        pager->pagerOpen(fileName);
+        rowCount = pager->fileLength / sizeof(Row);
     }
     ~Table() {
         delete pager;
@@ -68,6 +74,7 @@ public:
 
         return true;
     }
+    void tableClose();
 };
 
 

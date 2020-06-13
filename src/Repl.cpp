@@ -30,7 +30,7 @@ void Repl::stmtFromString(std::string& in, Statement& statement) {
 }
 
 void Repl::start() {
-    table = new Table;
+    table = new Table(fileName);
     std::string in;
     while(true) {
         Statement stmt;
@@ -38,6 +38,7 @@ void Repl::start() {
         std::getline(std::cin, in);
         stmtFromString(in,stmt);
         if (stmt.command == Command::Quit) {
+            table->tableClose();
             std::cout << "Goodbye\n";
             break;
         }
@@ -47,6 +48,7 @@ void Repl::start() {
         else {
             try{
                 executeStatement(stmt);
+                std::cout << "Executed\n";
             } catch(std::exception& e) {
                 std::cout
                 << "Failed to execute command: "
