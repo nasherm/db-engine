@@ -40,12 +40,12 @@ uint32_t* leafNodeCellKey(Node*  node, uint32_t cellNum){
 }
 
 uint8_t* leafNodeCellValue(Node* node, uint32_t cellNum) {
-    return leafNodeCell(node, cellNum) + LEAF_NODE_KEY_SIZE;
+    return leafNodeCell(node, cellNum) + LEAF_NODE_HEADER_SIZE;
 }
 
 void incrementNumCells(Node* node) {node->numCells += 1;}
 void setKey(Node* node, uint32_t cellNum, uint32_t key){
-    memcpy(leafNodeCell(node, cellNum), &key, sizeof(uint32_t));
+    *leafNodeCellKey(node, cellNum) = key;
 }
 
 void Pager::pagerOpen(const std::string& fileName) {
@@ -159,8 +159,7 @@ void Table::tableClose() {
 
 uint8_t* Cursor::value() {
     try {
-        auto node = table->getPage(pageNum);
-        return leafNodeCellValue(node, cellNum);
+        return leafNodeCellValue(table->getPage(pageNum), cellNum);
     } catch (std::exception& e) {
         std::cout << "failed to get page, exception thrown:"
                   << e.what()
