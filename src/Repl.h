@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 #include "Table.h"
-enum Command {Insert, Select, Tables, Delete, Quit, Failed};
+enum Command {Insert, Select, Tables, Delete, Quit, Failed, Constants, BTree};
 
 typedef struct {
     Command command;

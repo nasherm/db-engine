@@ -21,6 +21,8 @@ Command stringToCommand(const std::string& comm){
     if (comm == "select") return Command::Select;
     if (comm == ".tables") return Command::Tables;
     if (comm == "delete") return Command::Delete;
+    if (comm == ".constants") return Command::Constants;
+    if (comm == ".btree") return Command::BTree;
     return Command::Failed;
 }
 
@@ -44,6 +46,10 @@ void Repl::start() {
         }
         else if (stmt.command == Command::Failed) {
             std::cout << "Couldn't read command\n";
+        } else if (stmt.command == Command::Constants) {
+            printConstants();
+        } else if (stmt.command == Command::BTree) {
+            printTree(table->getPage(0));
         }
         else {
             try{
@@ -65,9 +71,6 @@ void Repl::executeStatement(const Statement &stmt) {
         if (stmt.tokens.size() != 4){
             throw std::runtime_error("Incorrect number of args for insert");
         }
-        if (!table->spaceAvail()){
-            throw std::runtime_error("No space in table for insert");
-        }
         table->insert(stmt.tokens);
     }
     else if (stmt.command == Command::Select) {
@@ -76,5 +79,4 @@ void Repl::executeStatement(const Statement &stmt) {
         }
         table->select();
     }
-
 }

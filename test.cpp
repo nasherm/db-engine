@@ -8,6 +8,13 @@
 #include <fstream>
 #include "src/Table.h"
 #include "src/Repl.h"
+bool compareStringToChar(const char *c, const std::string& s) {
+    for (auto i = 0; i < s.length(); i++) {
+        if (c[i] == '\0' || c[i] != s[i])
+            return false;
+    }
+    return true;
+}
 
 void test_insert() {
     Table *table = new Table;
@@ -19,20 +26,21 @@ void test_insert() {
         Repl::stmtFromString(inst, stmt);
         table->insert(stmt.tokens);
     }
-    Row* r = new Row;
+    auto r = new Row;
     auto cursor = new Cursor(table, true);
     std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 1);
-    assert((Table::compareStringToChar(r->username, "test")));
-    assert((Table::compareStringToChar(r->email, "test@email.com")));
+    assert((compareStringToChar(r->username, "test")));
+    assert((compareStringToChar(r->email, "test@email.com")));
 
     cursor->advance();
     std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 2);
-    assert(Table::compareStringToChar(r->username, "test2"));
-    assert(Table::compareStringToChar(r->email, "test2@email.com"));
+    assert(compareStringToChar(r->username, "test2"));
+    assert(compareStringToChar(r->email, "test2@email.com"));
 
     delete r;
+    delete cursor;
     delete table;
 }
 
@@ -53,21 +61,21 @@ void test_persistence(){
     delete table;
     auto table2 = new Table("test_db");
 
-    auto* r = new Row;
+    auto r = new Row;
     auto cursor = new Cursor(table2, true);
     std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 1);
-    assert((Table::compareStringToChar(r->username, "test")));
-    assert((Table::compareStringToChar(r->email, "test@email.com")));
+    assert((compareStringToChar(r->username, "test")));
+    assert((compareStringToChar(r->email, "test@email.com")));
     cursor->advance();
     std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 2);
-    assert(Table::compareStringToChar(r->username, "test2"));
-    assert(Table::compareStringToChar(r->email, "test2@email.com"));
+    assert(compareStringToChar(r->username, "test2"));
+    assert(compareStringToChar(r->email, "test2@email.com"));
 
     delete r;
-    delete table2;
     delete cursor;
+    delete table2;
 }
 
 int main() {
