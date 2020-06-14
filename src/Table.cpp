@@ -70,6 +70,7 @@ Node* Pager::getPage(const uint32_t pageNum) {
     if (pages[pageNum] == nullptr){
         // Cache miss
         pages[pageNum] = new Node;
+        pages[pageNum]->parent = nullptr;
         auto numPages = fileLength / PAGE_SIZE;
 
         // In the case where we can save a partial page
@@ -176,7 +177,7 @@ void Cursor::advance() {
     }
 }
 
-void Cursor::leafNodeInsert(uint32_t key, Row *value) {
+void Cursor::leafNodeInsert(uint32_t key, Row* value) {
     auto node = table->getPage(pageNum);
     auto numCells = leafNodeNumCells(node);
     if (numCells >= LEAF_NODE_MAX_CELLS){

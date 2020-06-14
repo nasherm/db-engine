@@ -39,9 +39,6 @@ void test_insert() {
     assert(compareStringToChar(r->username, "test2"));
     assert(compareStringToChar(r->email, "test2@email.com"));
 
-    delete r;
-    delete cursor;
-    delete table;
 }
 
 void test_persistence(){
@@ -59,8 +56,8 @@ void test_persistence(){
     }
     table->tableClose();
     delete table;
-    auto table2 = new Table("test_db");
 
+    auto table2 = new Table("test_db");
     auto r = new Row;
     auto cursor = new Cursor(table2, true);
     std::memcpy(r, cursor->value(), sizeof(Row));
@@ -72,10 +69,6 @@ void test_persistence(){
     assert(r->id == 2);
     assert(compareStringToChar(r->username, "test2"));
     assert(compareStringToChar(r->email, "test2@email.com"));
-
-    delete r;
-    delete cursor;
-    delete table2;
 }
 
 int main() {
