@@ -26,7 +26,7 @@ typedef struct {
 static const uint32_t PAGE_SIZE = 4096;
 static const uint32_t MAX_PAGES = 100;
 
-typedef enum {NodeInternal, NodeLeaf} NodeType;
+typedef enum: uint8_t {NodeInternal, NodeLeaf} NodeType;
 
 /*
  * Common Node Header Layout
@@ -64,7 +64,7 @@ typedef struct Node {
     NodeType type;
     uint8_t isRoot;
     Node *parent;
-    uint32_t numCells = 0;
+    uint32_t numCells;
     uint8_t cells[LEAF_NODE_CELL_SIZE * LEAF_NODE_MAX_CELLS];
 } Node;
 
@@ -89,7 +89,9 @@ public:
     void pagerOpen(const std::string& fileName);
     Node* getPage(uint32_t pageNum);
     void flushPage(uint32_t pageIndex);
+
     [[nodiscard]] uint32_t getPagesCount() const {return pagesCount;}
+
     int fileDescriptor;
     uint32_t fileLength;
     std::array<Node*, MAX_PAGES> pages;
@@ -125,28 +127,30 @@ public:
 class Cursor {
 private:
     Table *table;
-    bool endOfTable;
     uint32_t pageNum;
     uint32_t cellNum;
+    bool endOfTable = true;
 public:
-    Cursor(Table *table, bool start): table(table) {
-        if (start){
-            pageNum = table->getRootPageNum();
-            cellNum = 0;
-            auto rootNode = table->getPage(table->getRootPageNum());
-            auto numCells = leafNodeNumCells(rootNode);
-            endOfTable = (numCells == 0);
-        } else {
-            pageNum = table->getRootPageNum();
-            auto rootNode = table->getPage(table->getRootPageNum());
-            cellNum = leafNodeNumCells(rootNode);
-            endOfTable = true;
-        }
+    explicit Cursor(Table *table): table(table) {
+        pageNum = table->getRootPageNum();
+        cellNum = 0;
+        auto rootNode = table->getPage(table->getRootPageNum());
+        auto numCells = leafNodeNumCells(rootNode);
+        endOfTable = (numCells == 0);
     }
+
     uint8_t* value();
     void advance();
-    [[nodiscard]] bool atEndOfTable() const{return endOfTable;}
+    void tableFind(uint32_t key);
+    void leafNodeFind(uint32_t rootPageNum, uint32_t key);
     void leafNodeInsert(uint32_t key, Row* value);
+
+    [[nodiscard]] uint32_t getCellNum() {return cellNum;}
+    [[nodiscard]] bool atEndOfTable() const{return endOfTable;}
+    [[nodiscard]] uint32_t getPageNum() {return pageNum;}
+    void setPageNum(uint32_t p) {pageNum = p;}
+    void setCellNum(uint32_t x) {cellNum = x;}
+
 };
 
 #endif //DB_ENGINE_TABLE_H

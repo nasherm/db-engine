@@ -27,7 +27,7 @@ void test_insert() {
         table->insert(stmt.tokens);
     }
     auto r = new Row;
-    auto cursor = new Cursor(table, true);
+    auto cursor = new Cursor(table);
     std::memcpy(r, cursor->value(), sizeof(Row));
     assert(r->id == 1);
     assert((compareStringToChar(r->username, "test")));
@@ -39,6 +39,8 @@ void test_insert() {
     assert(compareStringToChar(r->username, "test2"));
     assert(compareStringToChar(r->email, "test2@email.com"));
 
+    delete r;
+    delete cursor;
 }
 
 void test_persistence(){
@@ -59,8 +61,9 @@ void test_persistence(){
 
     auto table2 = new Table("test_db");
     auto r = new Row;
-    auto cursor = new Cursor(table2, true);
+    auto cursor = new Cursor(table2);
     std::memcpy(r, cursor->value(), sizeof(Row));
+    printf("row id = %d\n", r->id);
     assert(r->id == 1);
     assert((compareStringToChar(r->username, "test")));
     assert((compareStringToChar(r->email, "test@email.com")));
@@ -74,6 +77,6 @@ void test_persistence(){
 int main() {
     test_insert();
     test_persistence();
-    std::cout << "All tests passed\n";
+    std::cout << "\033[32m------All tests passed-----\033[0m\n";
     return 0;
 }
