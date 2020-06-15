@@ -17,7 +17,7 @@ bool compareStringToChar(const char *c, const std::string& s) {
 }
 
 void test_insert() {
-    Table *table = new Table;
+    auto *table = new Table();
     std::vector<std::string> instructions;
     instructions.emplace_back("insert 1 test test@email.com");
     instructions.emplace_back("insert 2 test2 test2@email.com");
@@ -26,21 +26,18 @@ void test_insert() {
         Repl::stmtFromString(inst, stmt);
         table->insert(stmt.tokens);
     }
-    auto r = new Row;
-    auto cursor = new Cursor(table);
-    std::memcpy(r, cursor->value(), sizeof(Row));
-    assert(r->id == 1);
-    assert((compareStringToChar(r->username, "test")));
-    assert((compareStringToChar(r->email, "test@email.com")));
+    auto r = Row();
+    auto cursor = Cursor(table);
+    std::memcpy(&r, cursor.value(), sizeof(Row));
+    assert(r.id == 1);
+    assert((compareStringToChar(r.username, "test")));
+    assert((compareStringToChar(r.email, "test@email.com")));
 
-    cursor->advance();
-    std::memcpy(r, cursor->value(), sizeof(Row));
-    assert(r->id == 2);
-    assert(compareStringToChar(r->username, "test2"));
-    assert(compareStringToChar(r->email, "test2@email.com"));
-
-    delete r;
-    delete cursor;
+    cursor.advance();
+    std::memcpy(&r, cursor.value(), sizeof(Row));
+    assert(r.id == 2);
+    assert(compareStringToChar(r.username, "test2"));
+    assert(compareStringToChar(r.email, "test2@email.com"));
 }
 
 void test_persistence(){
@@ -59,24 +56,24 @@ void test_persistence(){
     table->tableClose();
     delete table;
 
+    // TODO: resolve bug introduced in persistence, inserting into pre-existing database fails
     auto table2 = new Table("test_db");
-    auto r = new Row;
-    auto cursor = new Cursor(table2);
-    std::memcpy(r, cursor->value(), sizeof(Row));
-    printf("row id = %d\n", r->id);
-    assert(r->id == 1);
-    assert((compareStringToChar(r->username, "test")));
-    assert((compareStringToChar(r->email, "test@email.com")));
-    cursor->advance();
-    std::memcpy(r, cursor->value(), sizeof(Row));
-    assert(r->id == 2);
-    assert(compareStringToChar(r->username, "test2"));
-    assert(compareStringToChar(r->email, "test2@email.com"));
+    auto r = Row();
+    auto cursor = Cursor(table2);
+    std::memcpy(&r, cursor.value(), sizeof(Row));
+    assert(r.id == 1);
+    assert((compareStringToChar(r.username, "test")));
+    assert((compareStringToChar(r.email, "test@email.com")));
+    cursor.advance();
+    std::memcpy(&r, cursor.value(), sizeof(Row));
+    assert(r.id == 2);
+    assert(compareStringToChar(r.username, "test2"));
+    assert(compareStringToChar(r.email, "test2@email.com"));
 }
 
 int main() {
     test_insert();
     test_persistence();
-    std::cout << "\033[32m------All tests passed-----\033[0m\n";
+    std::cout << "\033[32m------All tests passed------\033[0m\n";
     return 0;
 }

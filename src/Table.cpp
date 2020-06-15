@@ -69,6 +69,10 @@ void Pager::pagerOpen(const std::string& fileName) {
     if (fileLength % PAGE_SIZE) {
         throw std::runtime_error("Corrupt file, database isn't a whole number of pages");
     }
+    if (pagesCount == 0) {
+        // Initialise root node
+        getPage(0);
+    }
 }
 
 Node* Pager::getPage(const uint32_t pageNum) {
@@ -78,12 +82,8 @@ Node* Pager::getPage(const uint32_t pageNum) {
 
     if (pages[pageNum] == nullptr){
         // Cache miss
-        pages[pageNum] = new Node;
-        initNode(pages[pageNum]);
+        pages[pageNum] = new Node();
         auto numPages = fileLength / PAGE_SIZE;
-
-        // In the case where we can save a partial page
-        if (fileLength % PAGE_SIZE) numPages ++;
 
         if (pageNum <= numPages) {
             lseek(fileDescriptor, pageNum * PAGE_SIZE, SEEK_SET);
@@ -115,8 +115,11 @@ void Pager::flushPage(const uint32_t pageIndex) {
     }
 }
 
-void copyString(char* dest, const std::string& src){
-    for (size_t i = 0; i < src.length(); i++){
+void copyString(char* dest, const std::string& src, const uint32_t limit){
+    if (src.length() > limit) {
+        throw std::runtime_error("arguments too large to be inserted");
+    }
+    for (size_t i = 0; i < limit; i++){
         dest[i] = src[i];
     }
 }
@@ -127,20 +130,21 @@ void Table::insert(const std::vector<std::string> &args) {
         throw std::runtime_error("No space in table for insert");
     }
 
-    auto row = new Row;
-    row->id = std::stoi(args[1]);
-    copyString(row->username, args[2]);
-    copyString(row->email, args[3]);
+    Row row = Row();
+    row.id = std::stoi(args[1]);
+    copyString(row.username, args[2], USER_LEN);
+    copyString(row.email, args[3], EMAIL_LEN);
 
-    auto cursor = new Cursor(this);
-    cursor->tableFind(row->id);
-    if (cursor->getCellNum() < leafNodeNumCells(node)){
-        auto keyAtIndex = leafNodeCellKey(node, cursor->getCellNum());
-        if (*keyAtIndex == row->id) {
-            throw std::runtime_error("Duplicate key");
+    auto cursor = Cursor(this);
+    cursor.tableFind(row.id);
+    if (cursor.getCellNum() < leafNodeNumCells(node)){
+        auto keyAtIndex = leafNodeCellKey(node, cursor.getCellNum());
+        if (*keyAtIndex == row.id) {
+            std::cout << "Duplicate key found, no insertion into db\n";
+            return;
         }
     }
-    cursor->leafNodeInsert(row->id, row);
+    cursor.leafNodeInsert(row.id, row);
 }
 
 void printRow(const Row* row) {
@@ -148,13 +152,13 @@ void printRow(const Row* row) {
 }
 
 void Table::select(){
-    auto row = new Row;
-    auto cursor = new Cursor(this);
-    while (!(cursor->atEndOfTable())) {
-        auto slot = cursor->value();
-        std::memcpy(row, slot, sizeof(Row));
-        printRow(row);
-        cursor->advance();
+    auto row = Row();
+    auto cursor = Cursor(this);
+    while (!(cursor.atEndOfTable())) {
+        auto slot = cursor.value();
+        std::memcpy(&row, slot, LEAF_NODE_VALUE_SIZE);
+        printRow(&row);
+        cursor.advance();
     }
 }
 
@@ -190,7 +194,7 @@ void Cursor::advance() {
     }
 }
 
-void Cursor::leafNodeInsert(uint32_t key, Row* value) {
+void Cursor::leafNodeInsert(uint32_t key, const Row& value) {
     auto node = table->getPage(pageNum);
     auto numCells = leafNodeNumCells(node);
     if (numCells >= LEAF_NODE_MAX_CELLS){
@@ -205,12 +209,12 @@ void Cursor::leafNodeInsert(uint32_t key, Row* value) {
     }
     incrementNumCells(node);
     setKey(node, cellNum, key);
-    memcpy(leafNodeCellValue(node, cellNum), value, sizeof(Row));
+    memcpy(leafNodeCellValue(node, cellNum), &value, sizeof(Row));
 }
-void Cursor::leafNodeFind(uint32_t pageNum, uint32_t key) {
-    auto node = table->getPage(pageNum);
+void Cursor::leafNodeFind(uint32_t p, uint32_t key) {
+    auto node = table->getPage(p);
     auto numCells = node->numCells;
-    this->pageNum = pageNum;
+    this->pageNum = p;
     endOfTable = true;
 
     // Binary search

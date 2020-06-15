@@ -15,12 +15,13 @@
 // id - integer(4)
 // username - varChar(32)
 // email - varchar(255)
-#define USER_LEN 32
-#define EMAIL_LEN 255
-typedef struct {
+const uint32_t USER_LEN = 32;
+const uint32_t EMAIL_LEN = 255;
+typedef struct Row{
     uint32_t id;
     char username[USER_LEN];
     char email[EMAIL_LEN];
+    Row() = default;
 }Row;
 
 static const uint32_t PAGE_SIZE = 4096;
@@ -66,6 +67,7 @@ typedef struct Node {
     Node *parent;
     uint32_t numCells;
     uint8_t cells[LEAF_NODE_CELL_SIZE * LEAF_NODE_MAX_CELLS];
+    Node(): parent(nullptr), type(NodeLeaf), numCells(0){};
 } Node;
 
 uint32_t leafNodeNumCells(Node* node);
@@ -138,16 +140,16 @@ public:
         auto numCells = leafNodeNumCells(rootNode);
         endOfTable = (numCells == 0);
     }
-
+    ~Cursor() {}
     uint8_t* value();
     void advance();
     void tableFind(uint32_t key);
     void leafNodeFind(uint32_t rootPageNum, uint32_t key);
-    void leafNodeInsert(uint32_t key, Row* value);
+    void leafNodeInsert(uint32_t key, const Row& value);
 
-    [[nodiscard]] uint32_t getCellNum() {return cellNum;}
-    [[nodiscard]] bool atEndOfTable() const{return endOfTable;}
-    [[nodiscard]] uint32_t getPageNum() {return pageNum;}
+    [[nodiscard]] uint32_t getCellNum() const {return cellNum;}
+    [[nodiscard]] bool atEndOfTable() const {return endOfTable;}
+    [[nodiscard]] uint32_t getPageNum() const {return pageNum;}
     void setPageNum(uint32_t p) {pageNum = p;}
     void setCellNum(uint32_t x) {cellNum = x;}
 
