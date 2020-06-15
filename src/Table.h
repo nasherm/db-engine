@@ -65,9 +65,8 @@ typedef struct Node {
     NodeType type;
     uint8_t isRoot;
     Node *parent;
-    uint32_t numCells;
-    uint8_t cells[LEAF_NODE_CELL_SIZE * LEAF_NODE_MAX_CELLS];
-    Node(): parent(nullptr), type(NodeLeaf), numCells(0){};
+    uint8_t data[PAGE_SIZE - COMMON_NODE_HEADER_SIZE];
+    Node(): parent(nullptr), type(NodeLeaf){};
 } Node;
 
 uint32_t leafNodeNumCells(Node* node);

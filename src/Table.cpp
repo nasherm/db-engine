@@ -28,11 +28,11 @@ void printTree(Node* node) {
 }
 
 uint32_t leafNodeNumCells(Node* node) {
-    return node->numCells;
+    return *((uint32_t*)node->data);
 }
 
 uint8_t* leafNodeCell(Node* node, uint32_t cellNum) {
-    return &(node->cells[LEAF_NODE_CELL_SIZE * cellNum]);
+    return &(node->data[LEAF_NODE_NUM_CELLS_SIZE + (LEAF_NODE_CELL_SIZE * cellNum)]);
 }
 
 uint32_t* leafNodeCellKey(Node*  node, uint32_t cellNum){
@@ -44,15 +44,18 @@ uint8_t* leafNodeCellValue(Node* node, uint32_t cellNum) {
 }
 
 void incrementNumCells(Node* node) {
-    node->numCells += 1;
+    *((uint32_t*)node->data)+= 1;
 }
 
+void setNumCells(Node* node, uint32_t v) {
+    *((uint32_t*)node->data) = v;
+}
 void setKey(Node* node, uint32_t cellNum, uint32_t key){
     *leafNodeCellKey(node, cellNum) = key;
 }
 
 void initNode(Node* node) {
-    node->numCells = 0;
+    setNumCells(node, 0);
     node->type = NodeLeaf;
     node->parent = nullptr;
 }
@@ -213,7 +216,7 @@ void Cursor::leafNodeInsert(uint32_t key, const Row& value) {
 }
 void Cursor::leafNodeFind(uint32_t p, uint32_t key) {
     auto node = table->getPage(p);
-    auto numCells = node->numCells;
+    auto numCells = leafNodeNumCells(node);
     this->pageNum = p;
     endOfTable = true;
 
