@@ -49,7 +49,7 @@ void Repl::start() {
         } else if (stmt.command == Command::Constants) {
             printConstants();
         } else if (stmt.command == Command::BTree) {
-            printTree(table->getPage(0));
+            printTree(table->getPager(), 0, 0);
         }
         else {
             try{

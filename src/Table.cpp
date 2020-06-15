@@ -54,10 +54,89 @@ void setKey(Node* node, uint32_t cellNum, uint32_t key){
     *leafNodeCellKey(node, cellNum) = key;
 }
 
-void initNode(Node* node) {
+void initLeafNode(Node* node) {
     setNumCells(node, 0);
     node->type = NodeLeaf;
     node->parent = nullptr;
+}
+
+uint32_t* internalNodeNumKeys(Node* node) {
+    return (uint32_t*)node->data;
+}
+
+void initInternalNode(Node* node) {
+    node->type = NodeInternal;
+    node->isRoot = false;
+    *internalNodeNumKeys(node) = 0;
+}
+
+uint32_t* internalNodeRightChild(Node* node) {
+    return (uint32_t*)(&node->data[INTERNAL_NODE_NUM_KEYS_SIZE]);
+}
+
+uint32_t* internalNodeCell(Node* node, uint32_t cellNum) {
+    return (uint32_t*)(&node->data[
+            INTERNAL_NODE_RIGHT_CHILD_SIZE
+            + INTERNAL_NODE_NUM_KEYS_SIZE
+            + (cellNum * INTERNAL_NODE_CELL_SIZE)]);
+}
+
+uint32_t* internalNodeChild(Node* node, uint32_t childNum) {
+    auto numKeys = *internalNodeNumKeys(node);
+    if (childNum > numKeys) {
+        throw std::runtime_error("childNum greater that number of available keys");
+    } else if (childNum == numKeys) {
+        return internalNodeRightChild(node);
+    } else{
+        return internalNodeChild(node, childNum);
+    }
+}
+
+uint32_t* internalNodeCellKey(Node* node, uint32_t keyNum) {
+    return internalNodeCell(node, keyNum) + INTERNAL_NODE_CHILD_SIZE;
+}
+
+uint32_t getNodeMaxKey(Node* node) {
+    if(node->type == NodeLeaf) {
+        return *leafNodeCellKey(node, leafNodeNumCells(node) - 1);
+    } else {
+        return *internalNodeCellKey(node, *internalNodeNumKeys(node) - 1);
+    }
+}
+
+void indent(uint32_t level) {
+  for (uint32_t i = 0; i < level; i++) {
+    printf("  ");
+  }
+}
+
+void printTree(Pager* pager, uint32_t page_num, uint32_t indentation_level) {
+  auto node = pager->getPage(page_num);
+  uint32_t num_keys, child;
+
+    if(NodeLeaf == node->type) {
+        num_keys = leafNodeNumCells(node);
+        indent(indentation_level);
+        printf("- leaf (size %d)\n", num_keys);
+        for (uint32_t i = 0; i < num_keys; i++) {
+            indent(indentation_level + 1);
+            printf("- %d\n", leafNodeCellKey(node, i));
+        }
+    }
+    else {
+        num_keys = *internalNodeNumKeys(node);
+        indent(indentation_level);
+        printf("- internal (size %d)\n", num_keys);
+        for (uint32_t i = 0; i < num_keys; i++) {
+            child = *internalNodeChild(node, i);
+            printTree(pager, child, indentation_level + 1);
+
+            indent(indentation_level + 1);
+            printf("- key %d\n", *internalNodeCellKey(node, i));
+        }
+        child = *internalNodeRightChild(node);
+        printTree(pager, child, indentation_level + 1);
+    }
 }
 
 void Pager::pagerOpen(const std::string& fileName) {
@@ -74,7 +153,9 @@ void Pager::pagerOpen(const std::string& fileName) {
     }
     if (pagesCount == 0) {
         // Initialise root node
-        getPage(0);
+        auto root = getPage(0);
+        initLeafNode(root);
+        root->isRoot = true;
     }
 }
 
@@ -129,9 +210,6 @@ void copyString(char* dest, const std::string& src, const uint32_t limit){
 
 void Table::insert(const std::vector<std::string> &args) {
     auto node = getPage(rootPageNum);
-    if (leafNodeNumCells(node) >= LEAF_NODE_MAX_CELLS){
-        throw std::runtime_error("No space in table for insert");
-    }
 
     Row row = Row();
     row.id = std::stoi(args[1]);
@@ -201,7 +279,7 @@ void Cursor::leafNodeInsert(uint32_t key, const Row& value) {
     auto node = table->getPage(pageNum);
     auto numCells = leafNodeNumCells(node);
     if (numCells >= LEAF_NODE_MAX_CELLS){
-        std::cout << "TODO: splitting\n";
+        leafNodeSplitInsert(key, value);
         return;
     }
 
@@ -247,5 +325,52 @@ void Cursor::tableFind(uint32_t key) {
     } else {
         printf("todo\n");
     }
+}
+
+void Cursor::leafNodeSplitInsert(uint32_t key, const Row &value) {
+    auto oldNode = table->getPage(pageNum);
+    auto newPageNum = table->getUnusedPageNum();
+    auto newNode = table->getPage(newPageNum);
+    initLeafNode(newNode);
+
+    for (auto i = (int32_t)LEAF_NODE_MAX_CELLS; i >= 0; i--){
+        auto destinationNode = (i >= LEAF_NODE_LEFT_SPLIT_COUNT) ? newNode : oldNode;
+        auto indexWithinNode = i % LEAF_NODE_LEFT_SPLIT_COUNT;
+        auto destinationCell = leafNodeCell(destinationNode, indexWithinNode);
+
+        if (i == cellNum) {
+            memcpy(destinationCell + LEAF_NODE_KEY_SIZE, &value, LEAF_NODE_VALUE_SIZE);
+        } else if (i > cellNum) {
+            memcpy(destinationCell, leafNodeCell(oldNode, i-1),  LEAF_NODE_CELL_SIZE);
+        } else {
+            memcpy(destinationCell, leafNodeCell(oldNode, i), LEAF_NODE_CELL_SIZE);
+        }
+    }
+    setNumCells(oldNode, LEAF_NODE_LEFT_SPLIT_COUNT);
+    setNumCells(newNode, LEAF_NODE_RIGHT_SPLIT_COUNT);
+
+    if (oldNode->isRoot) {
+        table->createNewRoot(newPageNum);
+    } else {
+        printf("todo\n");
+    }
+}
+
+void Table::createNewRoot(uint32_t rightChildPageNum) {
+    auto root = getPage(rootPageNum);
+    auto rightChild = getPage(rightChildPageNum);
+    auto leftChildPageNum = getUnusedPageNum();
+    auto leftChild = getPage(leftChildPageNum);
+
+    memcpy(leftChild, root, PAGE_SIZE);
+    leftChild->isRoot = false;
+
+    initInternalNode(root);
+    root->isRoot = true;
+    *internalNodeNumKeys(root) = 1;
+    *internalNodeChild(root, 0) = leftChildPageNum;
+    auto leftChildMaxKey = getNodeMaxKey(leftChild);
+    *internalNodeCellKey(root, 0) = leftChildMaxKey;
+    *internalNodeRightChild(root) = rightChildPageNum;
 }
 

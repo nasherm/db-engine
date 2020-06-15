@@ -60,14 +60,36 @@ const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
 const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
 
 void printConstants();
+const uint32_t LEAF_NODE_RIGHT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) / 2;
+const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT =
+    (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT;
 
 typedef struct Node {
     NodeType type;
     uint8_t isRoot;
     Node *parent;
     uint8_t data[PAGE_SIZE - COMMON_NODE_HEADER_SIZE];
-    Node(): parent(nullptr), type(NodeLeaf){};
+    Node(): parent(nullptr), type(NodeLeaf), isRoot(false){};
 } Node;
+
+/*
+ * Internal Node Header Layout
+ */
+const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE = sizeof(uint32_t);
+const uint32_t INTERNAL_NODE_NUM_KEYS_OFFSET = COMMON_NODE_HEADER_SIZE;
+const uint32_t INTERNAL_NODE_RIGHT_CHILD_SIZE = sizeof(uint32_t);
+const uint32_t INTERNAL_NODE_RIGHT_CHILD_OFFSET =
+    INTERNAL_NODE_NUM_KEYS_OFFSET + INTERNAL_NODE_NUM_KEYS_SIZE;
+const uint32_t INTERNAL_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE +
+                                           INTERNAL_NODE_NUM_KEYS_SIZE +
+                                           INTERNAL_NODE_RIGHT_CHILD_SIZE;
+/*
+ * Internal Node Body Layout
+ */
+const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
+const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
+const uint32_t INTERNAL_NODE_CELL_SIZE =
+    INTERNAL_NODE_CHILD_SIZE + INTERNAL_NODE_KEY_SIZE;
 
 uint32_t leafNodeNumCells(Node* node);
 uint8_t* leafNodeCell(Node* node, uint32_t cellNum);
@@ -75,7 +97,6 @@ uint32_t* leafNodeCellKey(Node*  node, uint32_t cellNum);
 uint8_t* leafNodeCellValue(Node* node, uint32_t cellNum);
 void incrementNumCells(Node* node);
 void setKey(Node* node, uint32_t cellNum, uint32_t key);
-void printTree(Node* node);
 
 class Pager{
 private:
@@ -92,6 +113,7 @@ public:
     void flushPage(uint32_t pageIndex);
 
     [[nodiscard]] uint32_t getPagesCount() const {return pagesCount;}
+    uint32_t getUnusedPageNum() {return pagesCount;}
 
     int fileDescriptor;
     uint32_t fileLength;
@@ -119,10 +141,13 @@ public:
     }
     void insert(const std::vector<std::string>& args);
     void select();
+    void createNewRoot(uint32_t rootPageNum);
 
     void tableClose();
     Node* getPage(const uint32_t pageNum) {return pager->getPage(pageNum);}
     [[nodiscard]] uint32_t getRootPageNum() const {return rootPageNum;}
+    uint32_t getUnusedPageNum() {return pager->getUnusedPageNum();}
+    Pager* getPager() {return pager;}
 };
 
 class Cursor {
@@ -145,6 +170,7 @@ public:
     void tableFind(uint32_t key);
     void leafNodeFind(uint32_t rootPageNum, uint32_t key);
     void leafNodeInsert(uint32_t key, const Row& value);
+    void leafNodeSplitInsert(uint32_t key, const Row& value);
 
     [[nodiscard]] uint32_t getCellNum() const {return cellNum;}
     [[nodiscard]] bool atEndOfTable() const {return endOfTable;}
@@ -153,5 +179,5 @@ public:
     void setCellNum(uint32_t x) {cellNum = x;}
 
 };
-
+void printTree(Pager* pager, uint32_t page_num, uint32_t indentation_level);
 #endif //DB_ENGINE_TABLE_H

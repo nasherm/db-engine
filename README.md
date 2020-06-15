@@ -12,3 +12,6 @@ The project is still under build, so I've omitted these details for now
 ## Dependencies
 - C++17
 - CMake >= 3.16
+
+## References
+[cstack's blog posts](https://cstack.github.io/db_tutorial/)
