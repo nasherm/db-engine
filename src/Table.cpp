@@ -321,9 +321,9 @@ void Cursor::tableFind(uint32_t key) {
     auto rootPageNum = table->getRootPageNum();
     auto node = table->getPage(rootPageNum);
     if (node->type == NodeLeaf) {
-        this->leafNodeFind(rootPageNum, key);
+        leafNodeFind(rootPageNum, key);
     } else {
-        printf("todo\n");
+        internalNodeFind(rootPageNum, key);
     }
 }
 
@@ -374,3 +374,26 @@ void Table::createNewRoot(uint32_t rightChildPageNum) {
     *internalNodeRightChild(root) = rightChildPageNum;
 }
 
+void Cursor::internalNodeFind(uint32_t p, uint32_t key) {
+    auto node = table->getPage(p);
+    auto numKeys = *internalNodeNumKeys(node);
+    // Binary search to find index of child
+    uint32_t minIndex = 0, maxIndex = numKeys;
+    while(minIndex != maxIndex) {
+        auto index = (minIndex + maxIndex) / 2;
+        auto keyToRight = *internalNodeCellKey(node, index);
+        if (keyToRight >= index) {
+            maxIndex = index;
+        } else {
+            minIndex = index+1;
+        }
+    }
+
+    auto childNum = *internalNodeChild(node, minIndex);
+    auto child = table->getPage(childNum);
+    if(child->type == NodeLeaf) {
+        leafNodeFind(childNum, key);
+    } else {
+        internalNodeFind(childNum, key);
+    }
+}

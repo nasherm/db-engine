@@ -171,6 +171,7 @@ public:
     void leafNodeFind(uint32_t rootPageNum, uint32_t key);
     void leafNodeInsert(uint32_t key, const Row& value);
     void leafNodeSplitInsert(uint32_t key, const Row& value);
+    void internalNodeFind(uint32_t rootPageNum, uint32_t key);
 
     [[nodiscard]] uint32_t getCellNum() const {return cellNum;}
     [[nodiscard]] bool atEndOfTable() const {return endOfTable;}
