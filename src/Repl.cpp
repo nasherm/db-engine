@@ -32,7 +32,7 @@ void Repl::stmtFromString(std::string& in, Statement& statement) {
 }
 
 void Repl::start() {
-    table = new Table(fileName);
+//    table = new Table(fileName);
     std::string in;
     while(true) {
         Statement stmt;
@@ -47,9 +47,9 @@ void Repl::start() {
         else if (stmt.command == Command::Failed) {
             std::cout << "Couldn't read command\n";
         } else if (stmt.command == Command::Constants) {
-            printConstants();
+//            printConstants();
         } else if (stmt.command == Command::BTree) {
-            printTree(table->getPager(), 0, 0);
+//            printTree(table->getPager(), 0, 0);
         }
         else {
             try{
@@ -71,12 +71,12 @@ void Repl::executeStatement(const Statement &stmt) {
         if (stmt.tokens.size() != 4){
             throw std::runtime_error("Incorrect number of args for insert");
         }
-        table->insert(stmt.tokens);
+//        table->insert(stmt.tokens);
     }
     else if (stmt.command == Command::Select) {
         if (stmt.tokens.size() != 1){
             throw std::runtime_error("Incorrect number of args for select");
         }
-        table->select();
+//        table->select();
     }
 }
