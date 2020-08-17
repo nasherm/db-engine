@@ -1,19 +1,12 @@
 //
-// Created by potato on 06/06/2020.
+// Created by Nasherm on 06/06/2020.
 //
 
 #include "Repl.h"
+#include "Util.h"
 #include <iostream>
 #include <vector>
-#include <sstream>
-
-void tokenize(std::string in, const char delim, std::vector<std::string> &tokens) {
-    std::istringstream iss(in);
-    std::string str;
-    while (getline(iss, str, delim)){
-        tokens.push_back(str);
-    }
-}
+//#include "Util.h"
 
 Command stringToCommand(const std::string& comm){
     if (comm == ":q") return Command::Quit;
@@ -29,40 +22,32 @@ Command stringToCommand(const std::string& comm){
 }
 
 void Repl::stmtFromString(std::string& in, Statement& statement) {
-    tokenize(in, ' ', statement.tokens);
+    Util::tokenize(in, ' ', statement.tokens);
     statement.command = stringToCommand(statement.tokens[0]);
 }
 
 void Repl::start() {
     std::string in;
-    while(true) {
+    auto quit = false;
+    do {
         Statement stmt;
         std::cout << "+>";
         std::getline(std::cin, in);
-        stmtFromString(in,stmt);
+        stmtFromString(in, stmt);
         if (stmt.command == Command::Quit) {
-            table->tableClose();
+            table.tableClose();
             std::cout << "Goodbye\n";
-            break;
-        }
-        else if (stmt.command == Command::Name){
+            quit = true;
+        } else if (stmt.command == Command::Name) {
             std::cout << "DB Name: " << fileName << std::endl;
+        } else if (stmt.command == Command::Schema){
+            table.configSchemaFromInput(stmt.tokens);
         }
-        else {
+        else
+        {
             std::cout << "Couldn't read command\n";
         }
-//        else {
-//            try{
-//                executeStatement(stmt);
-//                std::cout << "Executed\n";
-//            } catch(std::exception& e) {
-//                std::cout
-//                << "Failed to execute command: "
-//                << e.what()
-//                << std::endl;
-//            }
-//        }
-    }
+    } while (!quit);
 }
 
 void Repl::executeStatement(const Statement &stmt) {

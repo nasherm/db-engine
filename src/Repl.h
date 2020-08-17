@@ -1,5 +1,5 @@
 //
-// Created by potato on 06/06/2020.
+// Created by Nasherm on 06/06/2020.
 //
 
 #ifndef DB_ENGINE_REPL_H
@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "Table.h"
+#include "Schema.h"
 enum Command {
     Insert, // Insert data into db
     Select, // Select data
@@ -28,13 +29,13 @@ typedef struct {
 
 class Repl {
     std::string fileName = "db_out";
-    Table *table;
+    Table table;
 public:
     Repl() {
-        table = new Table(this->fileName);
+        table = Table(this->fileName);
     }
     explicit Repl(char* fileName): fileName(fileName) {
-        table = new Table(this->fileName);
+        table = Table(this->fileName);
     }
     static void stmtFromString(std::string& in, Statement&);
     void start();
