@@ -21,8 +21,10 @@ Command stringToCommand(const std::string& comm){
     if (comm == "select") return Command::Select;
     if (comm == ".tables") return Command::Tables;
     if (comm == "delete") return Command::Delete;
-    if (comm == ".constants") return Command::Constants;
     if (comm == ".btree") return Command::BTree;
+    if (comm == "schema") return Command::Schema;
+    if (comm == ".show") return Command::Show;
+    if (comm == ".") return Command::Name;
     return Command::Failed;
 }
 
@@ -32,7 +34,6 @@ void Repl::stmtFromString(std::string& in, Statement& statement) {
 }
 
 void Repl::start() {
-//    table = new Table(fileName);
     std::string in;
     while(true) {
         Statement stmt;
@@ -44,39 +45,37 @@ void Repl::start() {
             std::cout << "Goodbye\n";
             break;
         }
-        else if (stmt.command == Command::Failed) {
-            std::cout << "Couldn't read command\n";
-        } else if (stmt.command == Command::Constants) {
-//            printConstants();
-        } else if (stmt.command == Command::BTree) {
-//            printTree(table->getPager(), 0, 0);
+        else if (stmt.command == Command::Name){
+            std::cout << "DB Name: " << fileName << std::endl;
         }
         else {
-            try{
-                executeStatement(stmt);
-                std::cout << "Executed\n";
-            } catch(std::exception& e) {
-                std::cout
-                << "Failed to execute command: "
-                << e.what()
-                << std::endl;
-            }
+            std::cout << "Couldn't read command\n";
         }
+//        else {
+//            try{
+//                executeStatement(stmt);
+//                std::cout << "Executed\n";
+//            } catch(std::exception& e) {
+//                std::cout
+//                << "Failed to execute command: "
+//                << e.what()
+//                << std::endl;
+//            }
+//        }
     }
-    delete table;
 }
 
 void Repl::executeStatement(const Statement &stmt) {
-    if (stmt.command == Command::Insert) {
-        if (stmt.tokens.size() != 4){
-            throw std::runtime_error("Incorrect number of args for insert");
-        }
-//        table->insert(stmt.tokens);
-    }
-    else if (stmt.command == Command::Select) {
-        if (stmt.tokens.size() != 1){
-            throw std::runtime_error("Incorrect number of args for select");
-        }
-//        table->select();
-    }
+//    if (stmt.command == Command::Insert) {
+//        if (stmt.tokens.size() != 4){
+//            throw std::runtime_error("Incorrect number of args for insert");
+//        }
+////        table->insert(stmt.tokens);
+//    }
+//    else if (stmt.command == Command::Select) {
+//        if (stmt.tokens.size() != 1){
+//            throw std::runtime_error("Incorrect number of args for select");
+//        }
+////        table->select();
+//    }
 }
