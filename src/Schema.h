@@ -41,6 +41,16 @@ public:
         if (s == "int") return DataType::Int;
         return DataType::Undefined;
     }
+    static std::string dataTypeToString(DataType d) {
+        switch (d) {
+            case String:
+                return "string";
+            case Int:
+                return "int";
+            default:
+                return "undefined";
+        }
+    }
     void serializeMetaData(uint8_t* dest);
     void readMetaData(uint8_t* src);
     static void constructColumnSchemaFromString(std::string& in, ColumnSchema& dest);

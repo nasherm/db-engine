@@ -5,14 +5,14 @@
 #include <iostream>
 #include "TestHandler.h"
 
-void TestHandler::logFailure(std::string message){
-    failLogs.push_back(message);
+void TestHandler::logFailure(std::string message, std::string testName){
+    failLogs.push_back("Test name: " + testName + "\nFailure: " +message);
     numberOfFailedTests += 1;
 }
 
 int main() {
     auto test = TestHandler();
-    test.addTest(testConstructSchemaTriple);
+    test.addTest(testConstructSchemaTriple, "Construct Schema Triple");
 
     test.runTests();
 
