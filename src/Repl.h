@@ -17,9 +17,9 @@ enum Command {
     BTree, // Print BTree
     Schema, // Define the database schema with a list of pairs (column_name, column_size(bytes))
     Quit, // Exit
-    Show, // Print schema
+    ShowSchema, // Print schema
     Failed, // Returned if command unreadable
-    Name, // Show name of DB
+    DatabaseName, // Show name of DB
 };
 
 typedef struct {

@@ -4,7 +4,7 @@
 
 #include "Table.h"
 
-void Table::configSchemaFromInput(std::vector<std::string> in) {
+void Table::configSchemaFromInput(std::vector<std::string>& in) {
     std::vector<ColumnSchema> columnSchemas;
     for (auto s: in){
         try {

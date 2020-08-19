@@ -12,48 +12,58 @@
 
 const uint16_t MAX_ROW_BYTE_COUNT = 4096;
 
-typedef enum DataType {
-    String, // max 256 bytes
-    Int, // max 4 bytes
-    Undefined, // Errors
-}DataType;
+//typedef enum DataType {
+//    String, // max 256 bytes
+//    Int, // max 4 bytes
+//    Undefined, // Errors
+//}DataType;
 
-
+class DataType {
+private:
+    std::string type = "undefined";
+    unsigned int size = 0;
+public:
+    DataType() = default;
+    explicit DataType(std::string type): type(type){
+        if (type == "string") size = 256;
+        else if (type == "int") size = 4;
+        else type = "undefined"; // wrong arg
+    }
+    std::string toString(){
+        return type;
+    }
+    unsigned int getSize() {
+        return size;
+    }
+};
 
 // Input triples when defining schema are tuples of (name, type) which define a column
-typedef struct ColumnSchema {
-    char columnName[256];
-    DataType columnDatatype;
-} ColumnSchema;
+//typedef struct ColumnSchema {
+//} ColumnSchema;
+
+class ColumnSchema {
+public:
+    char columnName[256] ={};
+    DataType columnDataType = DataType();
+    ColumnSchema() = default;
+};
 
 class Schema {
 private:
-    uint16_t ROW_WIDTH;
-    uint16_t ROW_BYTE_COUNT;
-    uint16_t COLUMN_COUNT;
+    uint16_t ROW_WIDTH = 0;
+    uint16_t COLUMN_COUNT = 0;
     // Column at index i has offset stored in container
-    std::vector<uint16_t> COLUMN_OFFSETS;
+    std::vector<ColumnSchema> columns;
 public:
     Schema() = default;
-    Schema(std::vector<ColumnSchema> columnSchemas);
+    explicit Schema(std::vector<ColumnSchema>& columnSchemas);
     static DataType matchDataType(std::string s) {
-        if (s == "string") return DataType::String;
-        if (s == "int") return DataType::Int;
-        return DataType::Undefined;
+        return DataType(s);
     }
-    static std::string dataTypeToString(DataType d) {
-        switch (d) {
-            case String:
-                return "string";
-            case Int:
-                return "int";
-            default:
-                return "undefined";
-        }
-    }
+    static void constructColumnSchemaFromString(std::string& in, ColumnSchema& dest);
+    void printSchema();
     void serializeMetaData(uint8_t* dest);
     void readMetaData(uint8_t* src);
-    static void constructColumnSchemaFromString(std::string& in, ColumnSchema& dest);
 };
 
 

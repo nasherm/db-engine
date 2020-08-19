@@ -16,8 +16,8 @@ Command stringToCommand(const std::string& comm){
     if (comm == "delete") return Command::Delete;
     if (comm == ".btree") return Command::BTree;
     if (comm == "schema") return Command::Schema;
-    if (comm == ".show") return Command::Show;
-    if (comm == ".") return Command::Name;
+    if (comm == ".schema") return Command::ShowSchema;
+    if (comm == ".") return Command::DatabaseName;
     return Command::Failed;
 }
 
@@ -29,25 +29,32 @@ void Repl::stmtFromString(std::string& in, Statement& statement) {
 void Repl::start() {
     std::string in;
     auto quit = false;
-    do {
-        Statement stmt;
+    while(!quit){
         std::cout << "+>";
         std::getline(std::cin, in);
+        Statement stmt;
         stmtFromString(in, stmt);
         if (stmt.command == Command::Quit) {
-            table.tableClose();
+            table.saveToDisk();
             std::cout << "Goodbye\n";
             quit = true;
-        } else if (stmt.command == Command::Name) {
+        }
+        else if (stmt.command == Command::DatabaseName) {
             std::cout << "DB Name: " << fileName << std::endl;
-        } else if (stmt.command == Command::Schema){
+        }
+        else if (stmt.command == Command::Schema){
+            stmt.tokens.erase(stmt.tokens.begin());
             table.configSchemaFromInput(stmt.tokens);
+            table.printSchema();
         }
-        else
-        {
+        else if (stmt.command == Command::ShowSchema){
+            table.printSchema();
+        }
+        else{
             std::cout << "Couldn't read command\n";
+            std::cout << in << std::endl;
         }
-    } while (!quit);
+    }
 }
 
 void Repl::executeStatement(const Statement &stmt) {
