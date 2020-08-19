@@ -4,7 +4,6 @@
 
 #include "Schema.h"
 #include "Util.h"
-//#include "Util.h"
 
 
 
@@ -34,7 +33,7 @@ void Schema::constructColumnSchemaFromString(std::string& in, ColumnSchema& dest
         std::string name, type;
         Util::regexSearch(tokens[0], name, RegexType::RegexString);
         Util::regexSearch(tokens[1], type, RegexType::RegexString);
-        memcpy(dest.columnName, name.c_str(), 256);
+        dest.columnName = name;
         dest.columnDataType = matchDataType(type);
     }
 }
@@ -45,11 +44,12 @@ void Schema::printSchema() {
     std::cout << "-------------COLUMNS------------\n";
     for (auto c : columns) {
         std::cout
-        << "("
+        << "|("
         << c.columnName
         << ','
         << c.columnDataType.toString()
-        << ")\n";
+        << ")";
     }
+    std::cout << std::endl;
 }
 

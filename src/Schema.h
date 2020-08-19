@@ -24,10 +24,13 @@ private:
     unsigned int size = 0;
 public:
     DataType() = default;
-    explicit DataType(std::string type): type(type){
-        if (type == "string") size = 256;
-        else if (type == "int") size = 4;
-        else type = "undefined"; // wrong arg
+   explicit DataType(std::string type): type(type){
+        if (type == "string")
+            size = 256;
+        else if (type == "int")
+            size = 4;
+        else
+            type = "undefined"; // wrong arg
     }
     std::string toString(){
         return type;
@@ -35,6 +38,10 @@ public:
     unsigned int getSize() {
         return size;
     }
+
+    std::string getType(){
+       return type;
+   }
 };
 
 // Input triples when defining schema are tuples of (name, type) which define a column
@@ -43,7 +50,7 @@ public:
 
 class ColumnSchema {
 public:
-    char columnName[256] ={};
+    std::string columnName;
     DataType columnDataType = DataType();
     ColumnSchema() = default;
 };

@@ -9,18 +9,18 @@ void checkColumnSchema(
         ColumnSchema c,
         std::string& errorMessage,
         std::string& input) {
-    if (c.columnDatatype != expectedDataType) {
+    if (c.columnDataType.getType() != expectedDataType.getType()) {
         errorMessage += "\nInput: " + input;
         errorMessage +=
-                "\nData type mismatch, expected string got"
-                + Schema::dataTypeToString(c.columnDatatype);
+                "\nData type mismatch, expected \"" + expectedDataType.getType() + "\" got \""
+                + c.columnDataType.toString() + "\"";
 
     }
     if (c.columnName != expectedLabel) {
-        errorMessage += "\Input: " + input;
+        errorMessage += "\nInput: " + input;
         errorMessage +=
                 "\nColumn name mismatch, expected \"" + expectedLabel
-                + "\" got" + c.columnName;
+                + "\" got " + c.columnName + "\"";
     }
 }
 std::string testConstructSchemaTriple(){
@@ -33,11 +33,11 @@ std::string testConstructSchemaTriple(){
     for (auto i = 0; i < inputs.size(); i++){
         Schema::constructColumnSchemaFromString(inputs[i], columnSchemas[i]);
     }
-    checkColumnSchema(DataType::String, "name",
+    checkColumnSchema(DataType("string"), "name",
                       columnSchemas[0], errorMessage, inputs[0]);
-    checkColumnSchema(DataType::String, "address",
+    checkColumnSchema(DataType("string"), "address",
                       columnSchemas[1], errorMessage, inputs[1]);
-    checkColumnSchema(DataType::Int, "height",
+    checkColumnSchema(DataType("int"), "height",
                       columnSchemas[2], errorMessage, inputs[2]);
     return errorMessage;
 }
